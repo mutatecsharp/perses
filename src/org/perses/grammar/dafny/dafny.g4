@@ -144,3 +144,4 @@ object_identifier: (IDENTIFIER '.')? identifier;
 top_decl_member: function_decl | method_decl;
 
 program: top_decl*;
+translation_unit: program;

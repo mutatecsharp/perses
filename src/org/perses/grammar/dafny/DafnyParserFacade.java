@@ -15,7 +15,7 @@ public final class DafnyParserFacade
                 createCombinedAntlrGrammar("PnfDafny.g4", DafnyParserFacade.class),
                 PnfDafnyLexer.class,
                 PnfDafnyParser.class,
-                ImmutableIntArray.of(PnfDafnyLexer.IDENT));
+                ImmutableIntArray.of(PnfDafnyLexer.IDENTIFIER));
     }
 
     @Override
