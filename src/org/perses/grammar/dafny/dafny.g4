@@ -11,6 +11,11 @@ REAL: 'real';
 CHAR: 'char';
 STRING: 'string';
 ARRAY: 'array';
+MAP: 'map';
+SET: 'set';
+MULTISET: 'multiset';
+SEQUENCE: 'seq';
+DATATYPE: 'datatype';
 
 // METHODS AND CLASSES
 TRAIT: 'trait';
@@ -20,6 +25,7 @@ METHOD: 'method';
 FUNCTION: 'function';
 RETURNS: 'returns';
 CONSTRUCTOR: 'constructor';
+LENGTH: 'Length';
 
 // CONTROL FLOW
 IF: 'if';
@@ -29,6 +35,8 @@ BREAK: 'break';
 CONTINUE: 'continue';
 WHILE: 'while';
 PRINT: 'print';
+MATCH: 'match';
+CASE: 'case';
 
 // OTHER KEYWORDS
 VAR: 'var';
@@ -39,9 +47,10 @@ NOT: '!';
 NEG: '-';
 ADD: '+';
 MOD: '%';
-DIV: '/'; 
+DIV: '/';
 MUL: '*';
 EQ: '==';
+NEQ: '!=';
 LT: '<';
 LEQ: '<=';
 GT: '>';
@@ -51,97 +60,188 @@ RIMP: '<==';
 IFF: '<==>';
 AND: '&&';
 OR: '||';
+IN: 'in';
+NOT_IN: '!in';
+DOT: '.';
 
 // LITERAL TYPES
 BOOL_LITERAL: 'false' | 'true';
 INT_LITERAL: NEG? ('0x' [0-9A-Fa-f]+ | '0' | [1-9][0-9]*);
 REAL_LITERAL: NEG? ('0' | [1-9][0-9]*) '.' [0-9]+;
-STRING_LITERAL: '"' (STRING_CHAR | '\\' ESCAPED_CHAR)* '"';
+STRING_LITERAL: '"' (STRING_CHAR | ESCAPED_CHAR)* '"';
+CHAR_LITERAL: '\'' (CHAR_CHAR) '\'';
 
 // BASICS:
+UPPER_IDENTIFIER: [A-Z] ID_CHAR*;
 IDENTIFIER: NON_DIGIT_ID_CHAR ID_CHAR*;
 NON_DIGIT_ID_CHAR: [A-Za-z] | SPECIAL_CHAR;
-SPECIAL_CHAR: '\'' | '_' | '?'; 
+SPECIAL_CHAR: '\'' | '_' | '?';
 ID_CHAR: [0-9] | NON_DIGIT_ID_CHAR;
-ESCAPED_CHAR: '\'' | '"' | '\\' | '0';
+ESCAPED_CHAR: '\'' | '\\' | '0' | '\n';
 
 CHAR_CHAR: ~('\'' | '\\');
 STRING_CHAR: ~('"' | '\\');
 
-bool_literal: BOOL_LITERAL;
-int_literal: INT_LITERAL;
-real_literal: REAL_LITERAL;
-char_literal: '\'' (CHAR_CHAR | ESCAPED_CHAR) '\'';
+boolLiteral: BOOL_LITERAL;
+intLiteral: INT_LITERAL;
+realLiteral: REAL_LITERAL;
+charLiteral: CHAR_LITERAL;
 
-string_token: STRING_LITERAL;
+stringToken: STRING_LITERAL;
 
 // operators
-unary_operator: NOT | NEG;
-binary_operator: ADD | NEG | MUL | MOD | DIV | EQ | LT | LEQ | GT | GEQ | IMP | RIMP | IFF | AND | OR;
+unaryOperator: NOT | NEG;
+
+upperIdentifier: UPPER_IDENTIFIER;
 
 identifier: IDENTIFIER;
 
-top_decl: class_decl | trait_decl | top_decl_member;
+topDecl: datatypeDecl | classDecl | traitDecl | topDeclMember;
 
-generic_instantiation: '<' type (',' type)* '>';
+genericInstantiation: '<' type (',' type)* '>';
 
-type: INT | CHAR | REAL | BOOL | STRING | array_type;
+type: INT | CHAR | REAL | BOOL | STRING | arrayType | mapType | setType | multisetType | sequenceType | upperIdentifier;
 
-array_type: ARRAY generic_instantiation;
+arrayType: ARRAY genericInstantiation;
 
-class_decl: CLASS identifier (EXTENDS identifier (',' identifier)*)? '{' (class_member_decl)* '}';
+mapType: MAP genericInstantiation;
 
-trait_decl: TRAIT identifier (EXTENDS identifier (',' identifier)*)? '{' (class_member_decl)* '}';
+setType: SET genericInstantiation;
 
-class_member_decl: field_decl | function_decl | method_decl | constructor_decl;
+multisetType: MULTISET genericInstantiation;
 
-field_decl: VAR identifier_type ';';
+sequenceType: SEQUENCE genericInstantiation;
 
-identifier_type: identifier ':' type;
+datatypeDecl: DATATYPE upperIdentifier '=' datatypeConstructor ('|' datatypeConstructor)*;
 
-parameters: '(' (identifier_type (',' identifier_type)*)? ')';
+datatypeConstructor: upperIdentifier parameters?;
 
-function_decl: FUNCTION (METHOD)? identifier parameters ':' type '{' expression '}';
+classDecl: CLASS upperIdentifier (EXTENDS upperIdentifier (',' upperIdentifier)*)? '{' (classMemberDecl)* '}';
 
-method_decl: METHOD identifier parameters (RETURNS parameters)? '{' (statement)* '}'; 
+classMemberDecl: fieldDecl | functionDecl | methodDecl | constructorDecl;
 
-constructor_decl: CONSTRUCTOR parameters '{' (statement)* '}';
+traitDecl: TRAIT upperIdentifier (EXTENDS upperIdentifier (',' upperIdentifier)*)? '{' (traitMemberDecl)* '}';
 
-expression: unary_operator? (literal | function_call | identifier | decl_assign_lhs | '(' expression ')') (binary_operator expression)*;
+traitMemberDecl: fieldDecl | functionSignatureDecl | methodSignatureDecl;
 
-literal: bool_literal | int_literal | real_literal | char_literal | string_token;
+functionSignatureDecl: FUNCTION (METHOD)? (identifier | upperIdentifier) parameters ':' type;
 
-call_parameters: '(' expression (',' expression)* ')';
+methodSignatureDecl: METHOD (identifier | upperIdentifier) parameters (RETURNS parameters)?;
 
-function_call: identifier call_parameters;
+fieldDecl: VAR identifierType;
 
-statement: (break_statement | continue_statement | declaration | assignment | print | if_statement | while_statement);
+identifierType: identifier ':' type;
 
-break_statement: BREAK ';';
-continue_statement: CONTINUE ';';
+parameters: '(' (identifierType (',' identifierType)*)? ')';
 
-decl_assign_lhs: identifier | array_index | object_identifier;
-decl_assign_rhs: expression | array_constructor | function_call;
+functionDecl: functionSignatureDecl '{' expression '}';
 
-declaration_lhs: VAR decl_assign_lhs;
-declaration: declaration_lhs ':=' decl_assign_rhs ';';
+methodDecl: methodSignatureDecl '{' sequence '}';
 
-assignment_lhs: decl_assign_lhs;
-assignment: assignment_lhs ':=' decl_assign_rhs ';';
+constructorDecl: CONSTRUCTOR parameters '{' sequence '}';
 
-print: PRINT expression ';';
+disj: NOT NOT;
 
-if_statement: IF '(' expression ')' '{' statement* '}' (ELSE '{' statement* '}')?;
+expression: modulus
+    | multisetConversion
+    | classInstantiation
+    | datatypeInstantiation
+    | functionCall
+    | ternaryExpression
+    | matchExpression
+    | arrayLength
+    | literal
+    | setDisplay
+    | sequenceDisplay
+    | mapConstructor
+    | identifier
+    | expression '[' indexElem ']'
+    | expression DOT '(' datatypeFieldUpdate+ ')'
+    | expression DOT expression
+    | '(' expression ')'
+    | expression index
+    | unaryOperator expression
+    | expression (MUL | DIV | MOD) expression
+    | expression (ADD | NEG | IN | NOT_IN) expression
+    | expression (GT | GEQ | LT | LEQ | EQ | NEQ) expression
+    | expression (AND | OR) expression
+    | expression (IMP | RIMP) expression
+    | expression disj expression
+    | expression IFF expression
+;
 
-while_statement: WHILE '(' expression ')' '{' statement* '}';
+datatypeFieldUpdate: identifier ':=' expression;
 
-array_constructor: NEW type ('[' int_literal (',' int_literal)* ']')+;
+modulus: '|' expression '|';
 
-array_index: identifier  ('[' expression (',' expression)* ']')+;
+multisetConversion: MULTISET '(' expression ')';
 
-object_identifier: (IDENTIFIER '.')? identifier;
+literal: boolLiteral | intLiteral | realLiteral | charLiteral | stringToken;
 
-top_decl_member: function_decl | method_decl;
+callParameters: '(' (expression (',' expression)*)* ')';
 
-program: top_decl*;
+functionCall: declAssignLhs callParameters;
+
+classInstantiation: NEW upperIdentifier callParameters;
+
+datatypeInstantiation: upperIdentifier callParameters;
+
+ternaryExpression: IF '(' expression ')' THEN expression ELSE expression;
+
+matchExpression: MATCH expression '{' caseExpression+ '}';
+caseExpression: CASE expression '=>' expression;
+
+arrayLength: declAssignLhs '.' LENGTH;
+
+index: '[' expression (',' expression)* ']';
+
+setDisplay: (MULTISET)? '{' (expression (',' expression)*)? '}';
+
+sequenceDisplay: '[' (expression (',' expression)*)? ']';
+
+mapConstructor: MAP '[' (indexElem (',' indexElem)*)? ']';
+
+indexElem: expression ':=' expression;
+
+statement: breakStatement
+    | continueStatement
+    | voidMethodCall
+    | declaration
+    | assignment
+    | print
+    | matchStatement
+    | ifStatement
+    | whileStatement;
+
+breakStatement: BREAK ';';
+continueStatement: CONTINUE ';';
+
+declIdentifier: identifier ('[' expression (',' expression)* ']')*;
+declAssignLhs: declIdentifier ('.' declAssignLhs)?;
+declAssignRhs: expression | arrayConstructor;
+
+declarationLhs: VAR declAssignLhs (',' declAssignLhs)*;
+declaration: declarationLhs (':' type)? ':=' declAssignRhs ';';
+
+assignmentLhs: declAssignLhs;
+assignment: assignmentLhs ':=' declAssignRhs ';';
+
+print: PRINT expression (',' expression)* ';';
+
+voidMethodCall: declAssignLhs callParameters ';';
+
+sequence: statement*;
+
+matchStatement: MATCH expression '{' caseStatement+ '}';
+caseStatement: CASE expression '=>' sequence;
+
+ifStatement: IF '(' expression ')' '{' sequence '}' (ELSE '{' sequence '}')?;
+
+whileStatement: WHILE '(' expression ')' '{' sequence '}';
+
+arrayConstructor: NEW type ('[' intLiteral (',' intLiteral)* ']')+;
+
+topDeclMember: functionDecl | methodDecl;
+
+program: topDecl*;
 translation_unit: program;
