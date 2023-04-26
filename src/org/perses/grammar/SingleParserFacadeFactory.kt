@@ -52,14 +52,14 @@ import org.perses.program.LanguageKind
 
 /** Creates a parser facade, based on the type of language kind.  */
 class SingleParserFacadeFactory private constructor(
-  private val language2FacadeMap: ImmutableMap<LanguageKind, ParserFacadeCreator>
+  private val language2FacadeMap: ImmutableMap<LanguageKind, ParserFacadeCreator>,
 ) : AbstractParserFacadeFactory() {
 
   init {
     if (language2FacadeMap.keys
-      .asSequence()
-      .map { it.name.lowercase() }
-      .distinct().count() != language2FacadeMap.size
+        .asSequence()
+        .map { it.name.lowercase() }
+        .distinct().count() != language2FacadeMap.size
     ) {
       reportError("The names of the languages should be distinct by ignoring cases.")
     }
@@ -87,7 +87,7 @@ class SingleParserFacadeFactory private constructor(
   fun interface ParserFacadeFactoryCustomizer {
     fun customize(
       language: LanguageKind,
-      defaultParserFacadeCreator: ParserFacadeCreator
+      defaultParserFacadeCreator: ParserFacadeCreator,
     ): ParserFacadeCreator
   }
 
@@ -99,7 +99,7 @@ class SingleParserFacadeFactory private constructor(
 
     @JvmStatic
     fun builderWithBuiltinLanguages(
-      customizer: ParserFacadeFactoryCustomizer = IDENTITY_CUSTOMIZER
+      customizer: ParserFacadeFactoryCustomizer = IDENTITY_CUSTOMIZER,
     ): Builder {
       val builder = Builder()
       builder.add(LanguageGo, { PnfGoParserFacade() }, customizer)
@@ -130,7 +130,7 @@ class SingleParserFacadeFactory private constructor(
     fun add(
       language: LanguageKind,
       facadeCreator: ParserFacadeCreator,
-      customizer: ParserFacadeFactoryCustomizer = IDENTITY_CUSTOMIZER
+      customizer: ParserFacadeFactoryCustomizer = IDENTITY_CUSTOMIZER,
     ): Builder {
       val customizedFacadeCreator = customizer.customize(language, facadeCreator)
       language2FacadeMap.put(language, customizedFacadeCreator)
