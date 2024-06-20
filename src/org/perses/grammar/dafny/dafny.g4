@@ -34,12 +34,25 @@ THEN: 'then';
 BREAK: 'break';
 CONTINUE: 'continue';
 WHILE: 'while';
+FORALL: 'forall';
+FOR: 'for';
+TO: 'to';
 PRINT: 'print';
 MATCH: 'match';
 CASE: 'case';
 
+// VERIFICATION
+ASSERT: 'assert';
+DECREASES: 'decreases';
+ENSURES: 'ensures';
+REQUIRES: 'requires';
+READS: 'reads';
+MODIFIES: 'modifies';
+INVARIANT: 'invariant';
+
 // OTHER KEYWORDS
 VAR: 'var';
+CONST: 'const';
 NEW: 'new';
 
 // OPERATORS
@@ -124,11 +137,11 @@ traitDecl: TRAIT upperIdentifier (EXTENDS upperIdentifier (',' upperIdentifier)*
 
 traitMemberDecl: fieldDecl | functionSignatureDecl | methodSignatureDecl;
 
-functionSignatureDecl: FUNCTION (METHOD)? (identifier | upperIdentifier) parameters ':' type;
+functionSignatureDecl: FUNCTION (METHOD)? (identifier | upperIdentifier) parameters ':' type verifierAnnotation*;
 
-methodSignatureDecl: METHOD (identifier | upperIdentifier) parameters (RETURNS parameters)?;
+methodSignatureDecl: METHOD (identifier | upperIdentifier) parameters (RETURNS parameters)? verifierAnnotation*;
 
-fieldDecl: VAR identifierType;
+fieldDecl: (VAR | CONST) identifierType;
 
 identifierType: identifier ':' type;
 
@@ -152,12 +165,15 @@ expression: modulus
     | arrayLength
     | literal
     | setDisplay
+    | setComprehension
     | sequenceDisplay
+    | sequenceComprehension
     | mapConstructor
+    | mapComprehension
     | identifier
-    | expression '[' indexElem ']'
-    | expression DOT '(' datatypeFieldUpdate+ ')'
+    | expression DOT '(' datatypeFieldUpdate (',' datatypeFieldUpdate)* ')'
     | expression DOT expression
+    | expression '[' indexElem ']'
     | '(' expression ')'
     | expression index
     | unaryOperator expression
@@ -197,13 +213,20 @@ index: '[' expression (',' expression)* ']';
 
 setDisplay: (MULTISET)? '{' (expression (',' expression)*)? '}';
 
+setComprehension: SET identifierType '|' expression '::' expression;
+
 sequenceDisplay: '[' (expression (',' expression)*)? ']';
+
+sequenceComprehension: SEQUENCE '(' expression ',' identifier verifierAnnotation* '=>' expression ')';
 
 mapConstructor: MAP '[' (indexElem (',' indexElem)*)? ']';
 
+mapComprehension: MAP identifierType '|' expression '::' expression ':=' expression;
+
 indexElem: expression ':=' expression;
 
-statement: breakStatement
+statement: assertStatement
+    | breakStatement
     | continueStatement
     | voidMethodCall
     | declaration
@@ -211,7 +234,11 @@ statement: breakStatement
     | print
     | matchStatement
     | ifStatement
+    | forallStatement
+    | forLoop
     | whileStatement;
+
+assertStatement: ASSERT expression ';';
 
 breakStatement: BREAK ';';
 continueStatement: CONTINUE ';';
@@ -224,7 +251,7 @@ declarationLhs: VAR declAssignLhs (',' declAssignLhs)*;
 declaration: declarationLhs (':' type)? ':=' declAssignRhs ';';
 
 assignmentLhs: declAssignLhs;
-assignment: assignmentLhs ':=' declAssignRhs ';';
+assignment: assignmentLhs (',' assignmentLhs)* ':=' declAssignRhs (',' declAssignRhs)* ';';
 
 print: PRINT expression (',' expression)* ';';
 
@@ -237,11 +264,37 @@ caseStatement: CASE expression '=>' sequence;
 
 ifStatement: IF '(' expression ')' '{' sequence '}' (ELSE '{' sequence '}')?;
 
-whileStatement: WHILE '(' expression ')' '{' sequence '}';
+forallStatement: FORALL identifier '|' expression LEQ identifier LT expression '{' assignment '}';
 
-arrayConstructor: NEW type ('[' intLiteral (',' intLiteral)* ']')+;
+forLoop: FOR identifier ':=' expression TO expression '{' sequence '}';
+
+whileStatement: WHILE '(' expression ')' (verifierAnnotation)* '{' sequence '}';
+
+verifierAnnotation: decreases
+    | ensures
+    | invariant
+    | modifies
+    | reads
+    | requires;
+
+decreases: DECREASES expression;
+
+ensures: ENSURES expression;
+
+invariant: INVARIANT expression;
+
+modifies: MODIFIES identifier;
+
+reads: READS identifier;
+
+requires: REQUIRES expression;
+
+arrayConstructor: NEW type '[' intLiteral ']' (arrayComprehension | arrayValues)?;
+
+arrayComprehension: '(' identifier '=>' expression ')';
+
+arrayValues: '[' expression (',' expression)* ']';
 
 topDeclMember: functionDecl | methodDecl;
 
-program: topDecl*;
-translation_unit: program;
+translation_unit: topDecl*;
