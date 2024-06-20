@@ -7,7 +7,7 @@ import org.perses.program.LanguageKind
 
 object LanguageDafny : LanguageKind(
   name = "dafny",
-  extensions = ImmutableSet.of("dafny"),
+  extensions = ImmutableSet.of("dfy"),
   defaultCodeFormatControl = EnumFormatControl.COMPACT_ORIG_FORMAT,
   origCodeFormatControl = EnumFormatControl.ORIG_FORMAT,
   defaultFormatterCommands = ImmutableList.of(),
